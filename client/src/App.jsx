@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import './App.css';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 // Cache the user ID so it doesn't change on hot reload, but stays unique per session
 const MOCK_USER_ID = sessionStorage.getItem('mockUserId') || (() => {
   const newId = 'User_' + crypto.randomUUID().split('-')[0].toUpperCase();
@@ -139,8 +139,6 @@ function App() {
     if (!targetSeat) return alert('Invalid seat or seat no longer exists.');
     if (targetSeat.status !== 'AVAILABLE') return alert('Target seat is no longer AVAILABLE! Please reset or select another.');
 
-    setTrackerLogs([]);
-
     const requestsCount = 5;
     const basePayloads = Array.from({ length: requestsCount }).map((_, i) => ({
       reqId: `TestReq_${i + 1}`,
@@ -150,7 +148,7 @@ function App() {
       idempotency: crypto.randomUUID()
     }));
 
-    setTrackerLogs(basePayloads.map(p => ({
+    const initialLogs = basePayloads.map(p => ({
       id: p.reqId,
       time: new Date().toLocaleTimeString(),
       target: p.seatNumber,
@@ -158,10 +156,14 @@ function App() {
       status: 'DISPATCHING...',
       statusCode: 0,
       response: `Firing request via VirtualUser_${p.reqId.split('_')[1]}`
-    })));
+    }));
+
+    // Prepend new logs with 5 on top
+    setTrackerLogs(prev => [...[...initialLogs].reverse(), ...prev]);
 
     const promises = basePayloads.map(async p => {
       const reqStart = performance.now();
+      let finalLog;
       try {
         const res = await fetch(`${API_BASE}/api/book`, {
           method: 'POST',
@@ -173,7 +175,7 @@ function App() {
         });
         const data = await res.json();
 
-        return {
+        finalLog = {
           id: p.reqId,
           time: new Date().toLocaleTimeString(),
           target: p.seatNumber,
@@ -183,7 +185,7 @@ function App() {
           response: JSON.stringify(data)
         };
       } catch (err) {
-        return {
+        finalLog = {
           id: p.reqId,
           time: new Date().toLocaleTimeString(),
           target: p.seatNumber,
@@ -191,12 +193,14 @@ function App() {
           status: 'ERROR',
           statusCode: 500,
           response: err.message
-        }
+        };
       }
+
+      // Update state incrementally for this specific request to avoid UI jank
+      setTrackerLogs(prev => prev.map(log => log.id === p.reqId ? finalLog : log));
     });
 
-    const results = await Promise.all(promises);
-    setTrackerLogs(results.reverse());
+    await Promise.all(promises);
     fetchSeats();
   };
 
