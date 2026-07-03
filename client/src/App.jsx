@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import './App.css';
 
-const API_BASE = 'http://localhost:5000/api';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
 // Cache the user ID so it doesn't change on hot reload, but stays unique per session
 const MOCK_USER_ID = sessionStorage.getItem('mockUserId') || (() => {
   const newId = 'User_' + crypto.randomUUID().split('-')[0].toUpperCase();
