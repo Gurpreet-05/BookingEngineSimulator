@@ -11,7 +11,12 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 const prisma = new PrismaClient();
 
-app.use(cors());
+app.use(cors({
+  // Fall back to localhost during local coding, but use the live Vercel URL on Render
+  origin: process.env.CLIENT_URL || 'http://localhost:5173', 
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  credentials: true
+}));
 
 app.use(express.json());
 
