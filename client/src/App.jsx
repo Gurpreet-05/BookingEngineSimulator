@@ -107,7 +107,7 @@ function App() {
 
   const handleConfirm = async (seat) => {
     try {
-      const res = await fetch(`${API_BASE}/api/api/confirm`, {
+      const res = await fetch(`${API_BASE}/api/confirm`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ seatId: seat.id, userId: MOCK_USER_ID })
