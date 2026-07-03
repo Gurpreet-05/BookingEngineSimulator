@@ -73,9 +73,11 @@ The local dashboard comes with a built-in **Concurrency Simulator**:
 The system architecture was stress-tested using **Autocannon** to benchmark distributed throughput, evaluate network footprint, and validate transaction locking layers under load.
 
 <details>
-<summary><b>📷 View Autocannon Benchmark Logs (Write vs. Read Paths)</b></summary>
+<summary><b>📷 View Autocannon Benchmark Diagram</b></summary>
 
 ![Autocannon Benchmark Test](images/image.png)
+
+</details>
 
 ### 1. Concurrency Mutation Path (`POST /api/book`)
 * **Objective:** Verify idempotency stability and row-level write locking under overlapping parallel triggers.
@@ -126,5 +128,3 @@ Req/Bytes counts sampled once per second.
 
 3k requests in 10.29s, 13.9 MB read
 ```
-
-</details>
