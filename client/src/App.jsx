@@ -17,7 +17,7 @@ function App() {
 
   const fetchSeats = async () => {
     try {
-      const res = await fetch(`${API_BASE}/seats`);
+      const res = await fetch(`${API_BASE}/api/seats`);
       const data = await res.json();
       setSeats(data.data);
     } catch (err) {
@@ -65,7 +65,7 @@ function App() {
     let finalLog = null;
 
     try {
-      const res = await fetch(`${API_BASE}/book`, {
+      const res = await fetch(`${API_BASE}/api/book`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -107,7 +107,7 @@ function App() {
 
   const handleConfirm = async (seat) => {
     try {
-      const res = await fetch(`${API_BASE}/confirm`, {
+      const res = await fetch(`${API_BASE}/api/api/confirm`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ seatId: seat.id, userId: MOCK_USER_ID })
@@ -122,7 +122,7 @@ function App() {
 
   const handleReset = async () => {
     try {
-      const res = await fetch(`${API_BASE}/reset`, { method: 'POST' });
+      const res = await fetch(`${API_BASE}/api/reset`, { method: 'POST' });
       if (res.ok) {
         setTrackerLogs([]); // Clear logs for a fresh start
         fetchSeats();
@@ -163,7 +163,7 @@ function App() {
     const promises = basePayloads.map(async p => {
       const reqStart = performance.now();
       try {
-        const res = await fetch(`${API_BASE}/book`, {
+        const res = await fetch(`${API_BASE}/api/book`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
