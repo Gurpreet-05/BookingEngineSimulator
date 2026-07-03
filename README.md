@@ -65,3 +65,66 @@ The local dashboard comes with a built-in **Concurrency Simulator**:
 2. Click **Fire Concurrent Load Test**.
 3. Watch the **Live HTTP Tracker** on the right side. The UI natively launches 5 parallel Promises against the Backend simultaneously. 
 4. The Tracker will display the exact Millisecond Latency waterfall. You will see Postgres naturally admit the first network ping (`200 LOCKED`), and subsequently safely block and discard the remaining 4 parallel requests gracefully with strict HTTP `409` rejections.
+
+---
+
+## 📊 Infrastructure Performance Testing
+
+The system architecture was stress-tested using **Autocannon** to benchmark distributed throughput, evaluate network footprint, and validate transaction locking layers under load.
+
+<details>
+<summary><b>📷 View Autocannon Benchmark Logs (Write vs. Read Paths)</b></summary>
+
+![Autocannon Benchmark Test](images/image.png)
+
+### 1. Concurrency Mutation Path (`POST /api/book`)
+* **Objective:** Verify idempotency stability and row-level write locking under overlapping parallel triggers.
+* **Result:** Successfully enforced strict database isolation—only **1** transaction passed cleanly to alter the database state, while duplicate race condition hits were immediately deflected (`70 non-2xx conflict responses`).
+
+```text
+┌─────────┬────────┬────────┬────────┬────────┬───────────┬───────────┬────────┐
+│ Stat    │ 2.5%   │ 50%    │ 97.5%  │ 99%    │ Avg       │ Stdev     │ Max    │
+├─────────┼────────┼────────┼────────┼────────┼───────────┼───────────┼────────┤
+│ Latency │ 103 ms │ 112 ms │ 794 ms │ 905 ms │ 138.37 ms │ 123.99 ms │ 905 ms │
+└─────────┴────────┴────────┴────────┴────────┴───────────┴───────────┴────────┘
+┌───────────┬────────┬────────┬───────┬─────────┬────────┬─────────┬────────┐
+│ Stat      │ 1%     │ 2.5%   │ 50%   │ 97.5%   │ Avg    │ Stdev   │ Min    │
+├───────────┼────────┼────────┼───────┼─────────┼────────┼─────────┼────────┤
+│ Req/Sec   │ 3      │ 3      │ 17    │ 18      │ 14.2   │ 5.71    │ 3      │
+├───────────┼────────┼────────┼───────┼─────────┼────────┼─────────┼────────┤
+│ Bytes/Sec │ 1.8 kB │ 1.8 kB │ 10 kB │ 10.6 kB │ 8.4 kB │ 3.36 kB │ 1.8 kB │
+└───────────┴────────┴────────┴───────┴─────────┴────────┼─────────┴────────┘
+
+Req/Bytes counts sampled once per second.
+# of samples: 5
+
+1 2xx responses, 70 non 2xx responses
+121 requests in 5.08s, 42 kB read
+```
+
+### 2. Cache-Aside Read Path (`GET /api/seats`)
+
+* **Objective:** Benchmark high-concurrency layout fetch thresholds and evaluate Redis offloading efficiency.
+* **Result:** Handled a heavy read spike of **500 concurrent connections**, processing **3,000+ total requests** with zero connection dropouts at an average throughput velocity of **299.8 Req/Sec**.
+
+```text
+┌─────────┬────────┬─────────┬─────────┬─────────┬────────────┬───────────┬─────────┐
+│ Stat    │ 2.5%   │ 50%     │ 97.5%   │ 99%     │ Avg        │ Stdev     │ Max     │
+├─────────┼────────┼─────────┼─────────┼─────────┼────────────┬───────────┬─────────┤
+│ Latency │ 112 ms │ 1801 ms │ 3795 ms │ 4487 ms │ 1545.18 ms │ 936.37 ms │ 4901 ms │
+└─────────┴────────┴─────────┴─────────┴─────────┴────────────┬───────────┬─────────┘
+┌───────────┬─────────┬─────────┬────────┬─────────┬─────────┬────────┬─────────┐
+│ Stat      │ 1%      │ 2.5%    │ 50%    │ 97.5%   │ Avg     │ Stdev  │ Min     │
+├───────────┼─────────┼─────────┼────────┼─────────┼─────────┼────────┼─────────┘
+│ Req/Sec   │ 217     │ 217     │ 302    │ 358     │ 299.8   │ 46.28  │ 217     │
+├───────────┼─────────┼─────────┼────────┼─────────┼─────────┼────────┼─────────┤
+│ Bytes/Sec │ 1.01 MB │ 1.01 MB │ 1.4 MB │ 1.67 MB │ 1.39 MB │ 215 kB │ 1.01 MB │
+└───────────┴─────────┴─────────┴────────┼─────────┴─────────┴────────┴─────────┘
+
+Req/Bytes counts sampled once per second.
+# of samples: 10
+
+3k requests in 10.29s, 13.9 MB read
+```
+
+</details>
