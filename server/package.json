@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
+    "build": "npx prisma generate",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -13,11 +14,17 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@prisma/client": "^5.22.0",
+    "bullmq": "^5.79.2",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
-    "express": "^5.2.1"
+    "express": "^5.2.1",
+    "ioredis": "^5.11.1",
+    "redis": "^6.1.0"
   },
   "devDependencies": {
-    "nodemon": "^3.1.14"
+    "@prisma/config": "^7.8.0",
+    "nodemon": "^3.1.14",
+    "prisma": "^5.22.0"
   }
 }
